@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Ansible
+*.retry
+ansible/inventory/hosts.ini
+
+# Secrets — never commit these
+*.pem
+*.key
+.env
+vault-token.txt
+
+# OS/editor noise
+.DS_Store
+.vscode/

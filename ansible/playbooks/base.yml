@@ -1,0 +1,6 @@
+---
+- name: Apply base configuration
+  hosts: control
+  become: true
+  roles:
+    - base

@@ -1,0 +1,31 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+
+- name: Install essential packages
+  apt:
+    name:
+      - curl
+      - vim
+      - net-tools
+      - htop
+      - unattended-upgrades
+      - ca-certificates
+    state: present
+
+- name: Set timezone
+  timezone:
+    name: Africa/Lome
+
+- name: Enable unattended security upgrades
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";

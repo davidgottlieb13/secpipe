@@ -1,0 +1,62 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - openssh-server
+      - ca-certificates
+      - tzdata
+      - perl
+      - gnupg
+    state: present
+    update_cache: yes
+
+- name: Add GitLab GPG key
+  apt_key:
+    url: https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey
+    state: present
+
+- name: Add GitLab CE apt repository
+  apt_repository:
+    repo: "deb https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ jammy main"
+    state: present
+    filename: gitlab_gitlab-ce
+
+- name: Add GitLab source repository
+  apt_repository:
+    repo: "deb-src https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ jammy main"
+    state: present
+    filename: gitlab_gitlab-ce
+
+- name: Update apt cache after adding repo
+  apt:
+    update_cache: yes
+
+- name: Install gitlab-ce package
+  apt:
+    name: gitlab-ce
+    state: present
+  register: gitlab_install
+  environment:
+    EXTERNAL_URL: "http://{{ gitlab_external_ip }}"
+
+- name: Deploy gitlab.rb configuration
+  template:
+    src: gitlab.rb.j2
+    dest: /etc/gitlab/gitlab.rb
+    owner: root
+    group: root
+    mode: '0600'
+  notify: reconfigure gitlab
+
+- name: Flush handlers to apply reconfigure immediately
+  meta: flush_handlers
+
+- name: Wait for GitLab to become ready (this can take a few minutes)
+  uri:
+    url: "http://{{ gitlab_external_ip }}/users/sign_in"
+    status_code: 200
+  register: gitlab_ready
+  until: gitlab_ready.status == 200
+  retries: 30
+  delay: 20

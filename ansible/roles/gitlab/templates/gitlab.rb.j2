@@ -1,0 +1,18 @@
+external_url 'http://{{ gitlab_external_ip }}'
+
+# Resource optimization for a 6GB lab VM:
+# We run our own dedicated observability stack in Phase 6,
+# so GitLab's bundled monitoring is redundant overhead here.
+prometheus_monitoring['enable'] = false
+#grafana['enable'] = false
+
+# Reduce Puma worker processes (default scales with CPU count,
+# which is fine, but we cap memory-hungry workers explicitly)
+puma['worker_processes'] = 2
+
+# Reduce Sidekiq concurrency (background job processor)
+sidekiq['max_concurrency'] = 10
+
+# Disable object storage / registry-related extras we don't need yet
+# (container registry will be enabled later, in Phase 2)
+registry['enable'] = false

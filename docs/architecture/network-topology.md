@@ -14,7 +14,7 @@ using a dual-network design per VM:
   mirroring how internal/DMZ segmentation works in real infrastructure.
 
 ## Current state (end of Phase 0)
-See [`docs/screenshots/phase-0_architecture.png`](docs/screenshots/phase-0_architecture.png) for the architecture.
+See [`../screenshots/phase-0_architecture.png`](../screenshots/phase-0_architecture.png) for the architecture.
 
 ## Planned additions (later phases)
 

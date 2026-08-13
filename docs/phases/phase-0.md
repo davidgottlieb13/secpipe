@@ -33,6 +33,8 @@ ready to accept its first pipeline in Phase 1.
 
 ## Challenges encountered
 
+- **Role path mismatch**: Initially, Ansible could not locate the `base` role because the `roles/` directory was placed alongside `playbooks/` instead of inside it. This caused repeated "role not found" errors until the role path was corrected in `ansible.cfg`.
+- **Privilege escalation failure**: Several tasks failed with "Missing sudo password" when using `become: true`. The fix involved either running the playbook with `--ask-become-pass`.
 - **Unsupported Grafana config**: During gitlab-ctl reconfigure, GitLab failed with Mixlib::Config::UnknownConfigOptionError: Reading unsupported config value grafana. This was caused by the line grafana['enable'] = false in gitlab.rb, which is no longer recognized in recent GitLab releases. The fix was to remove that line before re-running the reconfigure.
 - **Handler execution failure**: The Ansible handler designed to apply configuration (reconfigure gitlab) was triggered correctly, but it failed due to the obsolete Grafana option. This confirmed the issue was not with the handler itself, but with the configuration being applied.
 - **Ruby warnings noise**: Multiple already initialized constant warnings appeared in the Ruby logs during reconfigure. While they didn’t block the installation, they made troubleshooting harder by obscuring the actual root cause.

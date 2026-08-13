@@ -14,26 +14,7 @@ using a dual-network design per VM:
   mirroring how internal/DMZ segmentation works in real infrastructure.
 
 ## Current state (end of Phase 0)
-
-\`\`\`mermaid
-graph TB
-    subgraph Host["Windows Host"]
-        subgraph VMnet10["VMnet10 - Host-only lab network (192.168.100.0/24)"]
-            CTRL["secpipe-control<br/>192.168.100.10<br/>Ansible control node<br/>1 vCPU / 1GB RAM"]
-            GITLAB["secpipe-gitlab<br/>192.168.100.11<br/>GitLab CE<br/>2 vCPU / 6GB RAM"]
-            RUNNER["secpipe-runner<br/>192.168.100.12<br/>GitLab Runner + Docker<br/>1 vCPU / 2GB RAM"]
-        end
-        subgraph VMnet8["VMnet8 - NAT (internet egress)"]
-            NAT[("Internet")]
-        end
-    end
-
-    CTRL -->|SSH + Ansible| GITLAB
-    CTRL -->|SSH + Ansible| RUNNER
-    RUNNER -->|polls for jobs| GITLAB
-    GITLAB -.->|package installs| NAT
-    RUNNER -.->|docker pulls, package installs| NAT
-\`\`\`
+See [`docs/screenshots/phase-0_architecture.png`](docs/screenshots/phase-0_architecture.png) for the architecture.
 
 ## Planned additions (later phases)
 

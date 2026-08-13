@@ -1,0 +1,6 @@
+---
+- name: Install Docker and GitLab Runner
+  hosts: runner
+  become: true
+  roles:
+    - runner

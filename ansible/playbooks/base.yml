@@ -1,6 +1,6 @@
 ---
 - name: Apply base configuration
-  hosts: control:gitlab
+  hosts: control:gitlab:runner
   become: true
   roles:
     - base

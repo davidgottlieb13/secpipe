@@ -58,3 +58,29 @@ still showcasing the code.
 The SecPipe API (Python/FastAPI, in-memory storage) was added as the payload that
 travels through the pipeline in all subsequent phases: tested here, containerized in
 Phase 2, scanned in Phase 3, deployed to Kubernetes in Phase 4.
+
+## Phase 2 update — Containerization + Container Registry
+
+GitLab's integrated Container Registry was enabled (previously disabled in Phase 0 to
+save RAM), running over plain HTTP on port 5050 — a deliberate lab simplification since
+there's no TLS/CA in this environment. Both the runner's host Docker daemon and each
+job's nested dind daemon are explicitly configured to trust this registry as an
+"insecure registry."
+
+See [`../screenshots/phase-2_architecture.jpg`](../screenshots/phase-2_architecture.jpg) for the architecture.
+
+### Security trade-off: privileged mode for Docker-in-Docker
+
+The `secpipe-runner` was reconfigured from `privileged = false` (set deliberately in
+Phase 0) to `privileged = true`, required for the dind sidecar to build images inside a
+CI job. This is a real, non-trivial trade-off — a privileged container has near-host-level
+kernel access — accepted here as the standard, documented approach for CI-driven image
+builds without mounting the host's Docker socket directly (which would be a worse
+alternative: direct control over the host's own Docker daemon from any job).
+
+### Container image hardening
+
+The application image is built via a multi-stage Dockerfile:
+- **Builder stage**: installs Python dependencies only, discarded from the final image
+- **Runtime stage**: minimal `python:3.12-slim` base, dependencies and app code owned by
+  and run as a dedicated non-root user (`appuser`, UID 1000), stdlib-only healthcheck

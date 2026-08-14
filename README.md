@@ -20,7 +20,7 @@ full network diagram and design rationale.
 
 - [x] **Phase 0 — Foundations**: Ansible control node, GitLab CE, GitLab Runner
 - [x] **Phase 1 — CI basics**: FastAPI app, first pipeline
-- [ ] **Phase 2 — Containerization**: Docker build + registry push
+- [x] **Phase 2 — Containerization**: Docker build + registry push
 - [ ] **Phase 3 — Shift-left security**: SAST, SCA, container image scanning
 - [ ] **Phase 4 — Kubernetes**: k3s cluster, admission control (OPA/Kyverno)
 - [ ] **Phase 5 — Supply chain security**: image signing (Cosign), DAST

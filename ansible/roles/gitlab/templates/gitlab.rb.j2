@@ -13,6 +13,8 @@ puma['worker_processes'] = 2
 # Reduce Sidekiq concurrency (background job processor)
 sidekiq['max_concurrency'] = 10
 
-# Disable object storage / registry-related extras we don't need yet
-# (container registry will be enabled later, in Phase 2)
-registry['enable'] = false
+# Container registry — enabled starting Phase 2, running over HTTP
+# (no TLS in this lab; runner is configured with an explicit insecure-registry
+# exception rather than exposing this registry outside the isolated lab network)
+registry_external_url 'http://{{ gitlab_external_ip }}:5050'
+gitlab_rails['registry_enabled'] = true

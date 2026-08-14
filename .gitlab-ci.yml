@@ -1,8 +1,10 @@
 # SecPipe CI/CD Pipeline
-# Phase 1: test stage only. More stages (build, scan, deploy) are added in later phases.
+# Phase 2: adds a build stage — builds the Docker image and pushes it to
+# GitLab's integrated Container Registry.
 
 stages:
   - test
+  - build
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -19,5 +21,30 @@ run_tests:
     - pip install -r requirements.txt -r requirements-dev.txt
   script:
     - pytest -v
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+build_image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    # Nested Docker daemon for this job only. The --insecure-registry flag
+    # here is the *inner* daemon's equivalent of the /etc/docker/daemon.json
+    # config set on the runner host itself in Step 3.2.
+    - name: docker:24.0.5-dind
+      command: ["--insecure-registry=192.168.100.11:5050"]
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker build -t "$IMAGE_TAG" ./app
+    - docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$IMAGE_TAG"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  needs:
+    - run_tests
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'

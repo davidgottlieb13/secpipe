@@ -1,0 +1,23 @@
+# SecPipe CI/CD Pipeline
+# Phase 1: test stage only. More stages (build, scan, deploy) are added in later phases.
+
+stages:
+  - test
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
+run_tests:
+  stage: test
+  image: python:3.12-slim
+  before_script:
+    - cd app
+    - pip install -r requirements.txt -r requirements-dev.txt
+  script:
+    - pytest -v
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'

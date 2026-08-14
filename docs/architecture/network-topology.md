@@ -46,7 +46,7 @@ Starting in Phase 1, the repository is pushed to **two remotes**:
 - **GitLab** (`gitlab`, self-hosted at `192.168.100.11`) — the CI/CD execution platform.
   Every push here triggers the pipeline via `secpipe-runner`.
 
-See [`../screenshots/phase-1_architecture.png`](../screenshots/phase-1_architecture.png) for the architecture.
+See [`../screenshots/phase-1_architecture.jpg`](../screenshots/phase-1_architecture.jpg) for the architecture.
 
 **Why this split**: it mirrors a real pattern some organizations use — a public/open
 GitHub presence combined with an internal GitLab (or similar) instance for actual build

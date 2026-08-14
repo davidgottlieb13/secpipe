@@ -1,6 +1,6 @@
-# SecPipe — Network Topology (Phase 0)
+# SecPipe — Network Topology
 
-## Overview
+## Overview (Phase 0)
 
 SecPipe runs entirely in VMware Workstation on a single host (24GB RAM / 8 logical processors),
 using a dual-network design per VM:
@@ -36,3 +36,25 @@ See [`../screenshots/phase-0_architecture.png`](../screenshots/phase-0_architect
 - **Dedicated Ansible control node instead of WSL2**: keeps all lab tooling inside the same
   isolated network as the managed nodes, avoiding Windows/WSL2 network translation quirks,
   and mirrors a realistic "bastion/control node" pattern used in real environments.
+
+## Phase 1 update — Dual-remote Git strategy + CI pipeline
+
+Starting in Phase 1, the repository is pushed to **two remotes**:
+
+- **GitHub** (`origin`) — the public portfolio remote. No pipelines run here; it exists
+  purely as the showcase/source-of-truth for anyone reviewing the project.
+- **GitLab** (`gitlab`, self-hosted at `192.168.100.11`) — the CI/CD execution platform.
+  Every push here triggers the pipeline via `secpipe-runner`.
+
+See [`../screenshots/phase-1_architecture.png`](../screenshots/phase-1_architecture.png) for the architecture.
+
+**Why this split**: it mirrors a real pattern some organizations use — a public/open
+GitHub presence combined with an internal GitLab (or similar) instance for actual build
+and deployment execution, keeping CI/CD infrastructure off the public internet while
+still showcasing the code.
+
+## Application layer (Phase 1)
+
+The SecPipe API (Python/FastAPI, in-memory storage) was added as the payload that
+travels through the pipeline in all subsequent phases: tested here, containerized in
+Phase 2, scanned in Phase 3, deployed to Kubernetes in Phase 4.

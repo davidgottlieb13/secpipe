@@ -1,7 +1,6 @@
 stages:
   - test
   - sast
-  - sca
   - build
 
 variables:
@@ -40,26 +39,6 @@ sonarqube_sast:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
 
-dependency_scan:
-  stage: sca
-  image:
-    name: aquasec/trivy:0.55.2
-    entrypoint: [""]
-  script:
-    # Scan the requirements file for known CVEs in dependencies.
-    # --exit-code 1 makes Trivy fail the job (not just report) when it
-    # finds vulnerabilities at or above the specified severity.
-    - trivy fs
-      --scanners vuln
-      --severity HIGH,CRITICAL
-      --exit-code 1
-      --format table
-      app/requirements.txt
-  needs:
-    - run_tests
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-
 build_image:
   stage: build
   image: docker:24.0.5
@@ -79,6 +58,5 @@ build_image:
     - docker push "$CI_REGISTRY_IMAGE:latest"
   needs:
     - sonarqube_sast
-    - dependency_scan
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'

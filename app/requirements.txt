@@ -2,9 +2,4 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.6
 pydantic==2.9.2
 
-# Intentionally pinned to a known-vulnerable version to validate
-# the SCA gate (Phase 3, Step 3). CVE-2020-14343: PyYAML's default
-# Loader allows arbitrary code execution via crafted YAML input.
-# Not currently used by the application — added solely to exercise
-# the pipeline's dependency scanning stage.
-pyyaml==5.3.1
+pyyaml==6.0.2

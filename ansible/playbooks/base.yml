@@ -1,6 +1,6 @@
 ---
 - name: Apply base configuration
-  hosts: control:gitlab:runner
+  hosts: control:gitlab:runner:sonarqube
   become: true
   roles:
     - base

@@ -1,6 +1,8 @@
 # SecPipe — Network Topology
 
-## Overview (Phase 0)
+## Phase 0
+
+### Overview
 
 SecPipe runs entirely in VMware Workstation on a single host (24GB RAM / 8 logical processors),
 using a dual-network design per VM:
@@ -13,10 +15,10 @@ using a dual-network design per VM:
   "dual-homed" pattern: internal lab traffic and internet egress are kept on separate interfaces,
   mirroring how internal/DMZ segmentation works in real infrastructure.
 
-## Current state (end of Phase 0)
+### Current state (end of Phase 0)
 See [`../screenshots/phase-0_architecture.png`](../screenshots/phase-0_architecture.png) for the architecture.
 
-## Planned additions (later phases)
+### Planned additions (later phases)
 
 | VM | IP | Phase | Purpose |
 |---|---|---|---|
@@ -26,7 +28,7 @@ See [`../screenshots/phase-0_architecture.png`](../screenshots/phase-0_architect
 | secpipe-observability | 192.168.100.40 | 6 | Prometheus / Grafana / Loki |
 | secpipe-sonarqube | 192.168.100.50 | 3 | SAST scanning |
 
-## Design decisions worth noting
+### Design decisions worth noting
 
 - **Static IPs over DHCP**: every VM has a fixed lab-network address, defined up front in a
   single addressing table. This keeps the Ansible inventory stable and every diagram/doc
@@ -53,7 +55,7 @@ GitHub presence combined with an internal GitLab (or similar) instance for actua
 and deployment execution, keeping CI/CD infrastructure off the public internet while
 still showcasing the code.
 
-## Application layer (Phase 1)
+### Application layer (Phase 1)
 
 The SecPipe API (Python/FastAPI, in-memory storage) was added as the payload that
 travels through the pipeline in all subsequent phases: tested here, containerized in

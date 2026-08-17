@@ -1,6 +1,9 @@
+# SecPipe CI/CD Pipeline
+# Phase 2: adds a build stage — builds the Docker image and pushes it to
+# GitLab's integrated Container Registry.
+
 stages:
   - test
-  - sast
   - build
 
 variables:
@@ -21,28 +24,13 @@ run_tests:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
 
-sonarqube_sast:
-  stage: sast
-  image: sonarsource/sonar-scanner-cli:latest
-  variables:
-    # SonarQube's scanner writes a local cache; scoping it inside the
-    # project dir keeps it out of the way and cacheable if we choose to later.
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
-    GIT_DEPTH: "0"
-  script:
-    - sonar-scanner
-      -Dsonar.host.url="${SONAR_HOST_URL}"
-      -Dsonar.token="${SONAR_TOKEN}"
-      -Dsonar.qualitygate.wait=true
-  needs:
-    - run_tests
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-
 build_image:
   stage: build
   image: docker:24.0.5
   services:
+    # Nested Docker daemon for this job only. The --insecure-registry flag
+    # here is the *inner* daemon's equivalent of the /etc/docker/daemon.json
+    # config set on the runner host itself in Step 3.2.
     - name: docker:24.0.5-dind
       command: ["--insecure-registry=192.168.100.11:5050"]
   variables:
@@ -53,10 +41,10 @@ build_image:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   script:
     - docker build -t "$IMAGE_TAG" ./app
-    - docker push "$IMAGE_TAG"
     - docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$IMAGE_TAG"
     - docker push "$CI_REGISTRY_IMAGE:latest"
   needs:
-    - sonarqube_sast
+    - run_tests
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'

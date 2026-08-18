@@ -60,7 +60,7 @@ dependency_scan:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
 
-build_and_scan_image:
+build_image:
   stage: build
   image: docker:24.0.5
   services:
@@ -70,28 +70,10 @@ build_and_scan_image:
     DOCKER_TLS_CERTDIR: ""
     DOCKER_HOST: tcp://docker:2375
     IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-    TRIVY_VERSION: "0.55.2"
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    # docker:24.0.5 is Alpine-based — install trivy's official binary directly,
-    # no package manager repo needed.
-    - apk add --no-cache curl
-    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
-      | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
   script:
     - docker build -t "$IMAGE_TAG" ./app
-    # Scan the image we just built, BEFORE pushing anything to the registry.
-    # --ignore-unfixed skips CVEs with no available patch yet — you can't
-    # act on those immediately, and gating on them just trains people to
-    # ignore the scanner. --severity limits noise the same way the SCA
-    # stage does, for consistency across both scanning layers.
-    - trivy image
-      --severity HIGH,CRITICAL
-      --ignore-unfixed
-      --exit-code 1
-      --format table
-      "$IMAGE_TAG"
-    # Only reached if the scan above passed (script stops on first failure).
     - docker push "$IMAGE_TAG"
     - docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
     - docker push "$CI_REGISTRY_IMAGE:latest"

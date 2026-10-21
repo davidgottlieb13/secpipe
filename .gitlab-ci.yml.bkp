@@ -1,0 +1,103 @@
+stages:
+  - test
+  - sast
+  - sca
+  - build
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
+run_tests:
+  stage: test
+  image: python:3.12-slim
+  before_script:
+    - cd app
+    - pip install -r requirements.txt -r requirements-dev.txt
+  script:
+    - pytest -v
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+sonarqube_sast:
+  stage: sast
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+    # SonarQube's scanner writes a local cache; scoping it inside the
+    # project dir keeps it out of the way and cacheable if we choose to later.
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  script:
+    - sonar-scanner
+      -Dsonar.host.url="${SONAR_HOST_URL}"
+      -Dsonar.token="${SONAR_TOKEN}"
+      -Dsonar.qualitygate.wait=true
+  needs:
+    - run_tests
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+dependency_scan:
+  stage: sca
+  image:
+    name: aquasec/trivy:0.55.2
+    entrypoint: [""]
+  script:
+    # Scan the requirements file for known CVEs in dependencies.
+    # --exit-code 1 makes Trivy fail the job (not just report) when it
+    # finds vulnerabilities at or above the specified severity.
+    - trivy fs
+      --scanners vuln
+      --severity HIGH,CRITICAL
+      --exit-code 1
+      --format table
+      app/requirements.txt
+  needs:
+    - run_tests
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+build_and_scan_image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - name: docker:24.0.5-dind
+      command: ["--insecure-registry=192.168.100.11:5050"]
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    TRIVY_VERSION: "0.55.2"
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    # docker:24.0.5 is Alpine-based — install trivy's official binary directly,
+    # no package manager repo needed.
+    - apk add --no-cache curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
+      | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+  script:
+    - docker build -t "$IMAGE_TAG" ./app
+    # Scan the image we just built, BEFORE pushing anything to the registry.
+    # --ignore-unfixed skips CVEs with no available patch yet — you can't
+    # act on those immediately, and gating on them just trains people to
+    # ignore the scanner. --severity limits noise the same way the SCA
+    # stage does, for consistency across both scanning layers.
+    - trivy image
+      --severity HIGH,CRITICAL
+      --ignore-unfixed
+      --exit-code 1
+      --format table
+      "$IMAGE_TAG"
+    # Only reached if the scan above passed (script stops on first failure).
+    - docker push "$IMAGE_TAG"
+    - docker tag "$IMAGE_TAG" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  needs:
+    - sonarqube_sast
+    - dependency_scan
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'

@@ -77,9 +77,11 @@ build_and_scan_image:
     # docker:24.0.5 is Alpine-based — install trivy's official binary directly,
     # no package manager repo needed.
     - apk add --no-cache curl
-    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
-      | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
-  script:
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+    - echo "RC=$?"
+    - which trivy
+    - trivy --version
+script:
     - docker build -t "$IMAGE_TAG" ./app
     # Scan the image we just built, BEFORE pushing anything to the registry.
     # --ignore-unfixed skips CVEs with no available patch yet — you can't
@@ -101,3 +103,4 @@ build_and_scan_image:
     - dependency_scan
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
+
